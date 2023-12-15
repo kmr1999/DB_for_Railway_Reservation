@@ -6,4 +6,4 @@ IRCTC database with 6 trains and 50 stations.
 available btw stations and fare for a travel.
 
 ->Implemented automatic confirmation of tickets for book ticket and 
-cancel ticket actions using triggers,stored procedure and functions
+cancel ticket actions using triggers
