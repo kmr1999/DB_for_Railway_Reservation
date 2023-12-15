@@ -15,18 +15,15 @@ CREATE TABLE User_details
 	security_ans VARCHAR2(30) NOT NULL,
 	CONSTRAINT pku PRIMARY KEY (user_id)
 );
-select * from train;
-drop table train;
-drop table train_route;
-drop table user_details;
-drop table station;
+
+
 CREATE TABLE Train
 (
 	train_no NUMBER(5) NOT NULL,
 	train_name VARCHAR2(20) NOT NULL,
 	CONSTRAINT pkt PRIMARY KEY (train_no)
 );
-select * from train;
+
 
 CREATE TABLE Station
 (
@@ -34,6 +31,7 @@ CREATE TABLE Station
 	station_name VARCHAR2(20) NOT NULL,
 	CONSTRAINT pks PRIMARY KEY (station_id)
 );
+
 
 
 CREATE TABLE Train_route
@@ -113,7 +111,6 @@ INSERT INTO Station (station_id,station_name) VALUES (55 ,'Gudur Junction');
 INSERT INTO Station (station_id,station_name) VALUES (56 ,'Nayadupeta');
 INSERT INTO Station (station_id,station_name) VALUES (57 ,'Sullurupeta');
 INSERT INTO Station (station_id,station_name) VALUES (58 ,'Chennai Central');
-
 
 
 INSERT INTO Train_route (train_no,station_id,train_arrival,train_depart,train_day,route_order)
@@ -444,7 +441,6 @@ set serveroutput on;
 
 
 
-
 DECLARE 
    rord1 number; 
    rord2 number; 
@@ -482,18 +478,12 @@ end if;
    END LOOP; 
   CLOSE train_num; 
 END; 
-
-
-
-
-
-
-
+/
 
 
 
 create table Ticket (
-pnr_no NUMBER ,
+pnr_no NUMBER  ,
 user_id varchar(15),
 train_no NUMBER(5) 
 NOT NULL,
@@ -506,20 +496,18 @@ NOT NULL,
 status varchar(2) default 'wl',
 seat_no number default -1
 );
-drop table ticket;
-create view as 
-select 
+
+
+
 
 
 CREATE OR REPLACE TRIGGEr ticket_booking
 BEFORE INSERT ON ticket
 FOR EACH ROW  
 DECLARE 
-go number:=0;
    coun number;
-   boo number:=1;
    seatno number;
-   var number;
+   not_overlapping number;
   a number;
   s_s number;
   r_ov1 number;
@@ -535,233 +523,130 @@ go number:=0;
 BEGIN 
   select route_order into r_o1 from train_route where station_id=:new.start_station and train_no=:new.train_no;
   select route_order into r_o2 from train_route where station_id=:new.end_station and train_no=:new.train_no;
-  
-   select count(*)into coun from ticket where train_no=:new.train_no and date_of_journey=:new.date_of_journey;
-   if(coun=0) then
-     :new.seat_no:=1;
-   :new.status:='c';
-     boo:=0;
-   end if;
-   if(coun>0) then
-      open booked_tickets;
-      LOOP 
-      
-     
-   FETCH booked_tickets into s_s,e_s,seatno; 
-   dbms_output.put_line(s_s||' '||e_s);
-  
-   if(var!=seatno and f!=1) then 
-   if(boo=1) then
-:new.seat_no:=seatno;
-:new.status:='c';
-go:=1;
-exit;
+----------------------to change seat change here
+for a in 1 .. 1
+loop      
 
-   end if; 
-   boo:=1;
-   end if;
-   
-   var:=seatno;
-  
-   f:=0;   
-   select route_order into r_ov1 from train_route where train_no=:new.train_no and station_id=s_s;
-   select route_order into r_ov2 from train_route where train_no=:new.train_no and station_id=e_s;
-   if(r_o2<r_ov1 or r_o1>r_ov2) then
-   if(boo=1) then   
-   boo:=1;
-   else
-   boo:=0;
-   end if;   
-   else       
-        boo:=0;
-   end if;     
-   dbms_output.put_line(seatno);
-   if(booked_tickets%notfound)then
-   if(boo=1) then
-   :new.seat_no:=seatno;
+select count(*) into coun from ticket where seat_no=a and train_no=:new.train_no and date_of_journey=:new.date_of_journey and status='c';
+
+
+
+if(coun>0) then
+for o in (select start_station,end_station
+      from ticket where seat_no=a and train_no=:new.train_no and date_of_journey=:new.date_of_journey and status='c')
+  loop
+if(o.start_station>r_o2  or    o.end_station<r_o1) then
+
+not_overlapping:=1;
+
+else
+not_overlapping:=0;
+Exit;
+
+end if;
+end loop;
+
+if(not_overlapping=1)THEN
+:new.seat_no:=a;
    :new.status:='c';
-   go:=1; 
-   dbms_output.put_line(go);
-   dbms_output.put_line(:new.seat_no);
-   dbms_output.put_line(:new.status);
-   end if;
-   end if;
-EXIT WHEN booked_tickets%notfound; 
-   END LOOP; 
-   close booked_tickets;
-   
-   end if;
- if(go!=1) then
-FOR a in 1 .. 2 LOOP 
-     select count(*) into coun from ticket where seat_no=a;
-     if(coun=0) then
-     :new.seat_no:=a;
-     :new.status:='c';
-    exit;
-     end if;
-  END LOOP;  
-   
-   end if;
+      exit;
+end if;
+end if;
+
+
+
+
+if(coun=0)THEN
+:new.seat_no:=a;
+   :new.status:='c';
+     EXIT;
+end if;
+end loop;
 END; 
-select * from ticket;
-delete from ticket;
+/
 
-       <------------------------------------------------->
+drop table ticket;
 insert into ticket(pnr_no,user_id,train_no,start_station,end_station,date_of_booking,date_of_journey,fare)
-values(1,'1',11019,3,10,sysdate,'20-04-2021',700);
-insert into ticket(pnr_no,user_id,train_no,start_station,end_station,date_of_booking,date_of_journey,fare) 
-values(2,'2',11019,12,15,sysdate,'20-04-2021',300);
-insert into ticket(pnr_no,user_id,train_no,start_station,end_station,date_of_booking,date_of_journey,fare) 
-values(3,'2',11019,16,19,sysdate,'20-04-2021',300);
-insert into ticket(pnr_no,user_id,train_no,start_station,end_station,date_of_booking,date_of_journey,fare) 
-values(4,'2',11019,5,20,sysdate,'20-04-2021',1500);
-insert into ticket(pnr_no,user_id,train_no,start_station,end_station,date_of_booking,date_of_journey,fare) 
-values(5,'2',11019,4,21,sysdate,'20-04-2021',1700);
-select *  from ticket;
+values(1,'1',11019,1,3,sysdate,TO_DATE('2015/05/28','YYYY/MM/DD'),100);
 
 
-
-<------------------------------------------------------------->
-
-
+insert into ticket(pnr_no,user_id,train_no,start_station,end_station,date_of_booking,date_of_journey,fare)
+values(2,'1',11019,1,2,sysdate,TO_DATE('2015/05/28','YYYY/MM/DD'),200);
 
 
-
-
-
-
-
-
-drop trigger cancel_ticket;
-CREATE OR REPLACE TRIGGEr cancel_ticket
-after delete ON ticket
-FOR EACH ROW 
-when (old.status='c')
-Declare
- pnr_no number;
- coun number;
-cursor cancel_tickets is 
- select pnr_no from ticket where
- date_of_journey=:old.date_of_journey and train_no=:old.train_no and status='wl' order by date_of_booking;  
-begin
-select count(*) into coun from ticket where
- date_of_journey=:old.date_of_journey and train_no=:old.train_no and status='wl';
- if(coun>0) then 
- 
- open cancel_tickets;
-  FETCH cancel_tickets into pnr_no; 
-  
-    rebook(pnr_no,:old.date_of_journey,:old.train_no);
- close cancel_tickets;
- end if;
- end;
+insert into ticket(pnr_no,user_id,train_no,start_station,end_station,date_of_booking,date_of_journey,fare)
+values(3,'1',11019,4,5,sysdate,TO_DATE('2015/05/28','YYYY/MM/DD'),100);
 
 delete from ticket;
 delete from ticket where pnr_no=1;
+select * from ticket;
+drop trigger cancel_ticket;
+
+CREATE OR REPLACE TRIGGEr cancel_ticket
+after delete ON ticket
+Declare
+ pnr number;
+ coun number;
+not_overlapping number;
+begin
+-------for here
+for o1 in (select pnr_no,train_no,date_of_journey,start_station,end_station from ticket where status='wl' order by date_of_booking )
+ loop   
+
+select count(*) into coun from ticket where train_no=o1.train_no and date_of_journey=o1.date_of_journey and status='c' ;
+
+
+if(coun>0)THEN
+
+----o1.start_station,o1.end_station
+
+for o2 in (select pnr_no,train_no,date_of_journey,start_station,end_station from ticket where 
+train_no=o1.train_no and date_of_journey=o1.date_of_journey and status='c')
+ loop 
+----o2.start_station,o2.end_station
 
 
 
 
+if(o1.start_station>o2.end_station  or    o1.end_station<o2.start_station) then
 
-CREATE OR REPLACE PROCEDURE rebook 
-(pnr IN number,dateofj date,trainno number) 
-IS 
-go number:=0;
-   coun number;
-   boo number:=1;
-   seatno number;
-   var number;
-  a number;
-  s_s number;
-  r_ov1 number;
-   r_ov2 number;
-  e_s number;
-  f number:=1;
-  r_o1 number;
-  r_o2 number;
- cursor booked_tickets is 
- select start_station,end_station,seat_no from ticket where
- date_of_journey=dateofj and train_no=trainno and status='c' order by seat_no;  
+not_overlapping:=1;
 
-BEGIN 
- select start_station,end_station into s_s,e_s from ticket where pnr_no=pnr; 
-  select route_order into r_o1 from train_route where station_id=s_s and train_no=trainno;
-  select route_order into r_o2 from train_route where station_id=e_s and train_no=trainno;
- 
-  select count(*)into coun from ticket where train_no=train_no and date_of_journey=dateofj;
-   if(coun=0) then
-   update ticket
+else
+not_overlapping:=0;
+Exit;
+
+end if;
+end loop;
+
+
+
+
+if(not_overlapping=1)THEN
+update ticket
    set seat_no=1,status='c'
-   where pnr_no=pnr;    
-     boo:=0;
-   end if;
- 
- 
-    if(coun>0) then
-      open booked_tickets;
-      LOOP 
+   where pnr_no=o1.pnr_no; 
+
       
-     
-   FETCH booked_tickets into s_s,e_s,seatno; 
-   dbms_output.put_line(s_s||' '||e_s);
-  
-   if(var!=seatno and f!=1) then 
-   if(boo=1) then
+end if;
 
- update ticket
-   set seat_no=seatno,status='c'
-   where pnr_no=pnr;    
-go:=1;
-exit;
+end if;
 
-   end if; 
-   boo:=1;
-   end if;
-   
-   var:=seatno;
-  
-   f:=0;   
-   select route_order into r_ov1 from train_route where train_no=trainno and station_id=s_s;
-   select route_order into r_ov2 from train_route where train_no=trainno and station_id=e_s;
-   if(r_o2<r_ov1 or r_o1>r_ov2) then
-   if(boo=1) then   
-   boo:=1;
-   else
-   boo:=0;
-   end if;   
-   else       
-        boo:=0;
-   end if;     
-   dbms_output.put_line(seatno);
-   if(booked_tickets%notfound)then
-   if(boo=1) then
-   update ticket
-   set seat_no=seatno,status='c'
-   where pnr_no=pnr;    
-   go:=1; 
-   dbms_output.put_line(go);
-  
-   end if;
-   end if;
-EXIT WHEN booked_tickets%notfound; 
-   END LOOP; 
-   close booked_tickets;
-   
-   end if;
- if(go!=1) then
-FOR a in 1 .. 30 LOOP 
-     select count(*) into coun from ticket where seat_no=a;
-     if(coun=0) then
-    update ticket
-   set seat_no=a,status='c';
-    exit;
-     end if;
-  END LOOP;  
-   
-   end if;
- 
- 
+if(coun=0)THEN
+update ticket
+   set seat_no=1,status='c'
+   where pnr_no=o1.pnr_no;  
+    
+end if;
+
+
+
+end loop;
+-------------end loop here
 END;
+
+
+
 
 
 
