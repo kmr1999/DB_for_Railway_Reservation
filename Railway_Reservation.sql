@@ -566,6 +566,14 @@ END;
 /
 
 drop table ticket;
+--12
+--15
+--45
+
+--15
+--12
+--45
+	
 insert into ticket(pnr_no,user_id,train_no,start_station,end_station,date_of_booking,date_of_journey,fare)
 values(1,'1',11019,1,3,sysdate,TO_DATE('2015/05/28','YYYY/MM/DD'),100);
 
